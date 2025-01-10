@@ -1,0 +1,16 @@
+- hosts: mssql-srv
+  vars:
+    mssql_sa_password: "YourStrong!Passw0rd"
+    mssql_exposed_port: "1433"
+  tasks:
+    - name: Include MSSQL 2022 playbook
+      include_tasks: mssql-srv/mssql-2022.yaml
+      when: mssql_version == "2022"
+
+    - name: Include MSSQL 2019 playbook
+      include_tasks: mssql-srv/mssql-2019.yaml
+      when: mssql_version == "2019"
+
+    - name: Include MSSQL 2017 playbook
+      include_tasks: mssql-srv/mssql-2017.yaml
+      when: mssql_version == "2017"
