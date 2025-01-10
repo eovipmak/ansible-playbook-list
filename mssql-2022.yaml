@@ -1,0 +1,78 @@
+  ##### Docker
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Check if Docker is installed
+      set_fact:
+        docker_installed: "{{ ansible_facts.packages['docker.io'] is defined }}"
+
+    - name: Install Docker
+      apt: 
+        name: docker.io
+        state: present
+      when: not docker_installed
+
+    - name: Start and enable Docker
+      service: 
+        name: docker
+        state: started
+        enabled: yes
+      when: docker_installed
+
+    ##### MSSQL Server
+    - name: Check if MSSQL Server 2022 image is pulled
+      community.general.docker_image_info:
+        name: mcr.microsoft.com/mssql/server:2022-latest
+      register: mssql_image_info
+
+    - set_fact:
+        mssql_image_pulled: "{{ mssql_image_info.images | length > 0 }}"
+    
+    - name: Pull MSSQL Server 2022 image  
+      docker_image:
+        name: mcr.microsoft.com/mssql/server:2022-latest
+        source: pull
+      when: not mssql_image_pulled
+
+    - name: Check if MSSQL Server 2022 container is running
+      community.general.docker_container_info:
+        name: mssql-2022
+      register: mssql_container_info
+      failed_when: false
+
+    - name: Set fact for container running status
+      set_fact:
+        mssql_container_running: "{{ (mssql_container_info.containers | default([])) | length > 0 }}"
+
+    - name: Ensure /var/lib/mssql22 directory exists
+      file:
+        path: /var/lib/mssql22
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: not mssql_container_running
+
+    - name: Create a volume for MSSQL Server 2022
+      docker_volume:
+        name: mssql22
+        driver_options:
+          type: none
+          device: /var/lib/mssql22
+          o: bind
+      when: not mssql_container_running
+
+    - name: Run MSSQL Server 2022 container
+      docker_container:
+        name: mssql-2022
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        state: started
+        restart_policy: always
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "{{ mssql_sa_password }}"
+        ports:
+          - "{{ mssql_exposed_port }}:1433"
+        volumes:
+          - mssql22:/var/opt/mssql
+      when: not mssql_container_running
