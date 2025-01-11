@@ -1,4 +1,8 @@
     ##### Docker
+    - name: Check OS
+      set_fact:
+        os_family: "{{ ansible_facts['os_family'] }}"
+
     - name: Gather package facts
       ansible.builtin.package_facts:
 
@@ -6,11 +10,17 @@
       set_fact:
         docker_installed: "{{ ansible_facts.packages['docker.io'] is defined }}"
 
-    - name: Install Docker
+    - name: Install Docker on Debian or Ubuntu-based systems
       apt: 
         name: docker.io
         state: present
-      when: not docker_installed
+      when: ansible_facts['os_family'] in ['Debian', 'Ubuntu'] and not docker_installed
+
+    - name: Install Docker on RedHat-based systems
+      yum: 
+        name: docker
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat' and not docker_installed
 
     - name: Start and enable Docker
       service: 
