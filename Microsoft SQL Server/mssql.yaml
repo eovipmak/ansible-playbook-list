@@ -1,4 +1,3 @@
-- hosts: all
   vars:
     mssql_sa_password: "YourStrong!Passw0rd"
     mssql_exposed_port: "1433"
