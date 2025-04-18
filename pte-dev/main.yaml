@@ -27,9 +27,9 @@
 
     - name: Extract the Pterodactyl panel
       unarchive:
-      src: /var/www/pterodactyl/panel.tar.gz
-      dest: /var/www/pterodactyl
-      remote_src: yes
+        src: /var/www/pterodactyl/panel.tar.gz
+        dest: /var/www/pterodactyl
+        remote_src: yes
 
     - name: Set permissions for storage and bootstrap/cache
       file:
