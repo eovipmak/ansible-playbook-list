@@ -30,6 +30,7 @@
         src: /var/www/pterodactyl/panel.tar.gz
         dest: /var/www/pterodactyl
         remote_src: yes
+      when: download_result.changed
 
     - name: Set permissions for storage and bootstrap/cache
       file:
