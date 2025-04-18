@@ -18,12 +18,11 @@
         dest: /var/www/pterodactyl/panel.tar.gz
       register: download_result
 
-    - name: Wait for panel.tar.gz to exist (only if just downloaded)
+    - name: Wait for panel.tar.gz to exist
       wait_for:
         path: /var/www/pterodactyl/panel.tar.gz
         state: present
         timeout: 60
-      when: download_result.changed
 
     - name: Extract the Pterodactyl panel
       unarchive:
