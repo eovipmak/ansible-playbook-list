@@ -14,8 +14,8 @@
 
     - name: Download the Pterodactyl panel archive
       get_url:
-      url: https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
-      dest: /var/www/pterodactyl/panel.tar.gz
+        url: https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
+        dest: /var/www/pterodactyl/panel.tar.gz
       register: download_result
 
     - name: Wait for panel.tar.gz to exist (only if just downloaded)
