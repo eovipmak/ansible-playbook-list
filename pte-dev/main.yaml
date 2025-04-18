@@ -1,33 +1,31 @@
 - hosts: all
   become: yes
+  vars:
+    pterodactyl_dir: /var/www/pterodactyl
+    panel_url: https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
+
   tasks:
-    - name: Remove all files and directories in /var/www/pterodactyl
+    - name: Remove all files and directories in {{ pterodactyl_dir }}
       file:
-        path: /var/www/pterodactyl
+        path: "{{ pterodactyl_dir }}"
         state: absent
 
-    - name: Create /var/www/pterodactyl directory
+    - name: Create {{ pterodactyl_dir }} directory
       file:
-        path: /var/www/pterodactyl
+        path: "{{ pterodactyl_dir }}"
         state: directory
         mode: '0755'
 
     - name: Download the Pterodactyl panel archive
       get_url:
-        url: https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
-        dest: /var/www/pterodactyl/panel.tar.gz
+        url: "{{ panel_url }}"
+        dest: "{{ pterodactyl_dir }}/panel.tar.gz"
       register: download_result
-
-    - name: Wait for panel.tar.gz to exist
-      wait_for:
-        path: /var/www/pterodactyl/panel.tar.gz
-        state: present
-        timeout: 60
 
     - name: Extract the Pterodactyl panel
       unarchive:
-        src: /var/www/pterodactyl/panel.tar.gz
-        dest: /var/www/pterodactyl
+        src: "{{ pterodactyl_dir }}/panel.tar.gz"
+        dest: "{{ pterodactyl_dir }}"
         remote_src: yes
       when: download_result.changed
 
@@ -37,24 +35,24 @@
         state: directory
         mode: '0755'
       with_items:
-        - /var/www/pterodactyl/storage
-        - /var/www/pterodactyl/bootstrap/cache
+        - "{{ pterodactyl_dir }}/storage"
+        - "{{ pterodactyl_dir }}/bootstrap/cache"
 
     - name: Install composer dependencies
       command:
         cmd: COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
-        chdir: /var/www/pterodactyl
+        chdir: "{{ pterodactyl_dir }}"
 
     - name: Clear Laravel views and config cache
       shell: |
         php artisan view:clear
         php artisan config:clear
       args:
-        chdir: /var/www/pterodactyl
+        chdir: "{{ pterodactyl_dir }}"
 
     - name: Set ownership to www-data
       file:
-        path: /var/www/pterodactyl
+        path: "{{ pterodactyl_dir }}"
         state: directory
         recurse: yes
         owner: www-data
@@ -63,9 +61,9 @@
     - name: Restart Laravel queue
       command:
         cmd: php artisan queue:restart
-        chdir: /var/www/pterodactyl
+        chdir: "{{ pterodactyl_dir }}"
 
     - name: Bring Laravel application up
       command:
         cmd: php artisan up
-        chdir: /var/www/pterodactyl
+        chdir: "{{ pterodactyl_dir }}"
