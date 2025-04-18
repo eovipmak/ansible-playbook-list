@@ -1,0 +1,64 @@
+- name: Change directory to /var/www/pterodactyl
+  command:
+    chdir: /var/www/pterodactyl
+
+- name: Remove all files and directories in /var/www/pterodactyl
+  file:
+    path: /var/www/pterodactyl
+    state: absent
+
+- name: Create /var/www/pterodactyl directory
+  file:
+    path: /var/www/pterodactyl
+    state: directory
+    mode: '0755'
+
+- name: Download and extract the Pterodactyl panel
+  get_url:
+    url: https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
+    dest: /var/www/pterodactyl/panel.tar.gz
+
+- name: Extract the Pterodactyl panel
+  unarchive:
+    src: /var/www/pterodactyl/panel.tar.gz
+    dest: /var/www/pterodactyl
+    remote_src: yes
+
+- name: Set permissions for storage and bootstrap/cache
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - /var/www/pterodactyl/storage
+    - /var/www/pterodactyl/bootstrap/cache
+
+- name: Install composer dependencies
+  command:
+    cmd: COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
+    chdir: /var/www/pterodactyl
+
+- name: Clear Laravel views and config cache
+  shell: |
+    php artisan view:clear
+    php artisan config:clear
+  args:
+    chdir: /var/www/pterodactyl
+
+- name: Set ownership to www-data
+  file:
+    path: /var/www/pterodactyl
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: Restart Laravel queue
+  command:
+    cmd: php artisan queue:restart
+    chdir: /var/www/pterodactyl
+
+- name: Bring Laravel application up
+  command:
+    cmd: php artisan up
+    chdir: /var/www/pterodactyl
